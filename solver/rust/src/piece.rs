@@ -31,33 +31,19 @@ impl PieceShape {
         self.squares = backed_squares;
     }
 
-    pub fn print(&self) -> String {
+    pub fn print(&self, anchor: Option<&SquarePosition>) -> String {
         if self.squares.is_empty() {
             return String::from("empty");
         }
         let mut result: String = String::new();
-        let mut min_x: Int = self.squares[0].0;
-        let mut max_x: Int = self.squares[0].0;
-        let mut min_y: Int = self.squares[0].1;
-        let mut max_y: Int = self.squares[0].1;
-        for square in self.squares.iter() {
-            if square.0 < min_x {
-                min_x = square.0;
-            }
-            if square.0 > max_x {
-                max_x = square.0;
-            }
-            if square.1 < min_y {
-                min_y = square.1;
-            }
-            if square.1 > max_y {
-                max_y = square.1;
-            }
-        }
-        for y in min_y..=max_y {
-            for x in min_x..=max_x {
+        for y in self.min_y()..=self.max_y() {
+            for x in self.min_x()..=self.max_x() {
                 if self.squares.contains(&(x, y)) {
-                    result.push('O');
+                    if anchor.is_some() && anchor.unwrap() == &(x, y) {
+                        result.push('A');
+                    } else {
+                        result.push('O');
+                    }
                 } else {
                     result.push(' ');
                 }
@@ -65,6 +51,13 @@ impl PieceShape {
             result.push('\n');
         }
         result
+    }
+
+    pub fn print_left_bottom_position(&self) -> String {
+        if self.squares.is_empty() {
+            return String::from("");
+        }
+        format!("({}, {})", self.min_x(), self.min_y())
     }
 
     pub fn min_x(&self) -> Int {
@@ -134,7 +127,7 @@ impl PieceShape {
         piece_shape
     }
 
-    pub fn reversed(&mut self) -> PieceShape {
+    pub fn reversed(&self) -> PieceShape {
         let mut reversed_shape = self.clone();
         for square in reversed_shape.squares.iter_mut() {
             square.0 = -square.0;

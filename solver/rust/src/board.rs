@@ -27,7 +27,12 @@ impl Board {
 
     pub fn print(&self) {
         for (i, piece) in self.pieces.iter().enumerate() {
-            println!("{}つ目:\n{}", i + 1, piece.print());
+            println!(
+                "{}つ目: {}\n{}",
+                i + 1,
+                piece.print_left_bottom_position(),
+                piece.print(None)
+            );
         }
     }
 
@@ -46,7 +51,6 @@ impl Board {
     }
 
     pub fn push_piece(&mut self, piece: PieceShape) -> Result<(), String> {
-        // TODO: check
         if !self.is_applicable_piece(&piece) {
             return Err("Piece is not applicable".to_string());
         }
@@ -68,13 +72,15 @@ impl Board {
     pub fn is_applicable_piece(&self, piece: &PieceShape) -> bool {
         let filled_area = self.filled_squares();
         for square in piece.squares.iter() {
+            // ピースが既存のピースと重なっていないか
             if filled_area.contains(square) {
                 return false;
             }
-            if square.0 < 0
-                || square.0 >= self.shape.width
-                || square.1 < 0
-                || square.1 >= self.shape.height
+            // ピースがボードの外にはみ出していないか
+            if square.0 < 1
+                || square.0 > self.shape.width
+                || square.1 < 1
+                || square.1 > self.shape.height
             {
                 return false;
             }
@@ -92,10 +98,10 @@ impl Board {
 
         // filled_areaがボード内に収まっているか
         for square in filled_area.iter() {
-            if square.0 < 0
-                || square.0 >= self.shape.width
-                || square.1 < 0
-                || square.1 >= self.shape.height
+            if square.0 < 1
+                || square.0 > self.shape.width
+                || square.1 < 1
+                || square.1 > self.shape.height
             {
                 return false;
             }
