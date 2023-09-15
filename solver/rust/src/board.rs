@@ -25,7 +25,7 @@ impl Board {
         Board { shape, pieces }
     }
 
-    pub fn print(&self) {
+    pub fn print_every_pieces(&self) {
         for (i, piece) in self.pieces.iter().enumerate() {
             println!(
                 "{}つ目: {}\n{}",

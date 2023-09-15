@@ -3,6 +3,7 @@ use crate::stack::LoopType::{Anchor, Piece, Reversed, Rotate90, Square};
 #[derive(Default)]
 pub struct SolveStack {
     items: Vec<StackItem>,
+    reset_target_index: Option<usize>,
 }
 
 #[derive(Clone)]
@@ -22,7 +23,10 @@ pub enum LoopType {
 
 impl SolveStack {
     pub fn new() -> SolveStack {
-        SolveStack { items: Vec::new() }
+        SolveStack {
+            items: Vec::new(),
+            reset_target_index: None,
+        }
     }
 
     pub fn push(&mut self, loop_type: LoopType, index: usize) {
@@ -57,7 +61,7 @@ impl SolveStack {
         self.items.last()
     }
 
-    pub fn current_type(&self) -> Option<LoopType> {
+    pub fn latest_type(&self) -> Option<LoopType> {
         self.current().map(|item| item.loop_type.clone())
     }
 
@@ -74,6 +78,19 @@ impl SolveStack {
         None
     }
 
+    pub fn latest_nth_index_of(&self, index: usize, loop_type: LoopType) -> Option<usize> {
+        let mut count = 0;
+        for item in self.items.iter().rev() {
+            if item.loop_type == loop_type {
+                count += 1;
+                if count == index {
+                    return Some(item.index);
+                }
+            }
+        }
+        None
+    }
+
     pub fn set_latest_index_of(&mut self, loop_type: LoopType, index: usize) {
         for item in self.items.iter_mut().rev() {
             if item.loop_type == loop_type {
@@ -81,5 +98,26 @@ impl SolveStack {
                 return;
             }
         }
+    }
+
+    pub fn set_reset_target_stack_index(&mut self, index: usize) {
+        self.reset_target_index = Some(index);
+    }
+
+    pub fn clear_reset_target_stack_index(&mut self) {
+        self.reset_target_index = None;
+    }
+
+    pub fn target_stack_index(&self) -> Option<usize> {
+        self.reset_target_index
+    }
+
+    pub fn latest_stack_index_of(&self, loop_type: LoopType) -> Option<usize> {
+        for (i, item) in self.items.iter().rev().enumerate() {
+            if item.loop_type == loop_type {
+                return Some(self.items.len() - i - 1);
+            }
+        }
+        None
     }
 }

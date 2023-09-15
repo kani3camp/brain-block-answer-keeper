@@ -95,29 +95,24 @@ fn solve(mut board: Board, pieces: Vec<PieceShape>) {
     let mut remaining_pieces: Vec<PieceShape> = pieces.clone();
 
     let mut stack = SolveStack::new();
-    let mut resetting = false;
 
     let mut anchor_i = 0;
 
     loop {
         if anchor_i >= board.get_anchor_positions().len() {
             println!("アンカーがなくなった");
-            board.print();
-            return;
+            break;
         }
         let anchor = board.get_anchor_positions()[anchor_i];
 
-        stack.push(Anchor, anchor_i);
         println!("anchor: {:?}", anchor);
         if remaining_pieces.is_empty() {
             println!("ピースを使い切った!!");
             if board.is_valid() {
                 println!("ボードを埋めた!!");
-                board.print();
                 break;
             }
             println!("ピースを使い切ったのにボードを埋められなかった");
-            board.print();
             break;
         }
         if board.is_position_filled(&anchor) {
@@ -125,115 +120,154 @@ fn solve(mut board: Board, pieces: Vec<PieceShape>) {
             anchor_i += 1;
             continue;
         }
+        if stack.target_stack_index().is_none() {
+            stack.push(Anchor, anchor_i);
+        }
 
         let mut remove_piece_i: Option<usize> = None;
-        'piece_choice: for (piece_shape_i, piece_shape) in remaining_pieces.iter().enumerate() {
-            if resetting {
-                if piece_shape_i < stack.latest_index_of(Piece).unwrap() {
-                    continue;
-                } else {
-                    resetting = false;
-                }
-            }
-            if piece_shape_i > 0 {
-                let result = stack.pop();
-                if result.is_err() {
-                    panic!("スタックが空になった");
-                }
-            }
-            stack.push(Piece, piece_shape_i);
-
-            // TRY
-            for (reversed_i, reversed) in [false, true].iter().enumerate() {
-                if resetting {
-                    if reversed_i < stack.latest_index_of(Reversed).unwrap() {
-                        continue;
+        'PIECE: for (piece_shape_i, piece_shape) in remaining_pieces.iter().enumerate() {
+            if stack.target_stack_index().is_some() {
+                if stack.target_stack_index() == stack.latest_stack_index_of(Piece) {
+                    if stack.latest_index_of(Piece) == Some(piece_shape_i) {
+                        stack.clear_reset_target_stack_index();
                     } else {
-                        resetting = false;
+                        continue;
+                    }
+                } else if stack.latest_index_of(Piece) != Some(piece_shape_i) {
+                    continue;
+                }
+            } else {
+                if stack.latest_type() == Some(Piece) {
+                    stack.pop().unwrap();
+                }
+                if stack.latest_type() == Some(Anchor) {
+                    stack.push(Piece, piece_shape_i);
+                }
+            }
+
+            'REVERSED: for (reversed_i, reversed) in [false, true].iter().enumerate() {
+                if stack.target_stack_index().is_some() {
+                    if stack.target_stack_index() == stack.latest_stack_index_of(Reversed) {
+                        if stack.latest_index_of(Reversed) == Some(reversed_i) {
+                            stack.clear_reset_target_stack_index();
+                        } else {
+                            continue;
+                        }
+                    } else if stack.latest_index_of(Reversed) != Some(reversed_i) {
+                        continue;
+                    }
+                } else {
+                    if stack.latest_type() == Some(Reversed) {
+                        stack.pop().unwrap();
+                    }
+                    if stack.latest_type() == Some(Piece) {
+                        stack.push(Reversed, reversed_i);
                     }
                 }
-                if reversed_i > 0 {
-                    let result = stack.pop();
-                    if result.is_err() {
-                        panic!("スタックが空になった");
-                    }
-                }
-                stack.push(Reversed, reversed_i);
 
                 let mut piece = piece_shape.clone();
                 if *reversed {
                     piece = piece.reversed();
                 }
-                for (square_i, square) in piece.squares.iter().enumerate() {
-                    if resetting {
-                        if square_i < stack.latest_index_of(Square).unwrap() {
+                'SQUARE: for (square_i, square) in piece.squares.iter().enumerate() {
+                    if stack.target_stack_index().is_some() {
+                        if stack.target_stack_index() == stack.latest_stack_index_of(Square) {
+                            if stack.latest_index_of(Square) == Some(square_i) {
+                                stack.clear_reset_target_stack_index();
+                            } else {
+                                continue;
+                            }
+                        } else if stack.latest_index_of(Square) != Some(square_i) {
                             continue;
-                        } else {
-                            resetting = false;
+                        }
+                    } else {
+                        if stack.latest_type() == Some(Square) {
+                            stack.pop().unwrap();
+                        }
+                        if stack.latest_type() == Some(Reversed) {
+                            stack.push(Square, square_i);
                         }
                     }
-                    if square_i > 0 {
-                        let result = stack.pop();
-                        if result.is_err() {
-                            panic!("スタックが空になった");
-                        }
-                    }
-                    stack.push(Square, square_i);
 
-                    for num90 in 0..4 {
-                        if resetting && num90 < stack.latest_index_of(Rotate90).unwrap() {
-                            continue;
-                        }
-                        if num90 > 0 {
-                            let result = stack.pop();
-                            if result.is_err() {
-                                panic!("スタックが空になった");
+                    'ROTATE90: for num90 in 0..4 {
+                        if stack.target_stack_index().is_some() {
+                            if stack.target_stack_index() == stack.latest_stack_index_of(Rotate90) {
+                                if stack.latest_index_of(Rotate90) == Some(num90) {
+                                    stack.clear_reset_target_stack_index();
+                                } else {
+                                    continue;
+                                }
+                            } else if stack.latest_index_of(Rotate90) != Some(num90) {
+                                continue;
+                            }
+                        } else {
+                            if stack.latest_type() == Some(Rotate90) {
+                                stack.pop().unwrap();
+                            }
+                            if stack.latest_type() == Some(Square) {
+                                stack.push(Rotate90, num90);
                             }
                         }
-                        stack.push(Rotate90, num90);
+                        // println!(
+                        //     "piece: {:?}, reversed: {}, square: {:?}, num90: {}",
+                        //     piece, reversed, square, num90
+                        // );
                         let rotated_piece = piece.rotate90(num90 as u8);
                         let shifted_piece =
                             rotated_piece.shift(anchor.0 - square.0, anchor.1 - square.1);
                         if board.is_applicable_piece(&shifted_piece) {
                             println!("ハマった！num90: {}, reversed: {}", num90, reversed);
-                            let applicable = board.is_applicable_piece(&shifted_piece);
                             println!("{}", shifted_piece.print(Some(&anchor)));
-                            let result = board.push_piece(shifted_piece.clone());
-                            if result.is_ok() {
-                                remove_piece_i = Some(piece_shape_i);
-                                break 'piece_choice;
-                            } else {
-                                panic!("ボードにピースを追加できなかった");
-                            }
+                            board.push_piece(shifted_piece.clone()).unwrap();
+                            remove_piece_i = Some(piece_shape_i);
+                            break 'PIECE;
                         }
                     }
                     // 全4方向試して、ダメだった
+                    assert_eq!(stack.latest_type(), Some(Rotate90));
+                    stack.pop().unwrap();
+                    assert_eq!(stack.latest_type(), Some(Square));
                 }
                 // 全ピースマス試して、ダメだった
+                assert_eq!(stack.latest_type(), Some(Square));
+                stack.pop().unwrap();
+                assert_eq!(stack.latest_type(), Some(Reversed));
             }
             // 表裏試して、ダメだった
+            assert_eq!(stack.latest_type(), Some(Reversed));
+            stack.pop().unwrap();
+            assert_eq!(stack.latest_type(), Some(Piece));
         }
         if let Some(i) = remove_piece_i {
             remaining_pieces.remove(i);
             anchor_i += 1;
         } else {
             // 余ったピース全部試して、ダメだった
-            println!("ハマるピースがなかったので巻き戻して続きから");
-            // １つ前のanchorに戻って続きから試す
-            // 1つポップして、次のインデックスを試す
-            let result = stack.pop();
-            if result.is_err() {
-                panic!("スタックが空になった");
-            }
+            assert_eq!(stack.latest_type(), Some(Piece));
+            stack.pop().unwrap();
+            assert_eq!(stack.latest_type(), Some(Anchor));
 
-            board.pieces.pop();
-            anchor_i -= 1;
-            resetting = true;
+            println!("ハマるピースがなかったので巻き戻して続きから");
+            // １つ前にピースをはめたanchorに戻って続きから試す
+
+            // 前回ピースを置いたanchorまでpopする
+            assert_eq!(stack.latest_type(), Some(Anchor));
+            stack.pop().unwrap(); // 今失敗したぶんのanchorをpop
+            assert_eq!(stack.latest_type(), Some(Rotate90));
+
+            // 前回置いたピースを基に戻す
+            let returned_piece_shape = board.pieces.pop().unwrap();
+            remaining_pieces.insert(stack.latest_index_of(Piece).unwrap(), returned_piece_shape);
+
+            anchor_i = stack.latest_index_of(Anchor).unwrap();
+
+            // board.print_filled_squares();
 
             // num90 loop
             let current_num90_index = stack.latest_index_of(Rotate90).unwrap();
             if current_num90_index < 4 - 1 {
                 stack.set_latest_index_of(Rotate90, current_num90_index + 1);
+                stack.set_reset_target_stack_index(stack.latest_stack_index_of(Rotate90).unwrap());
                 continue;
             }
             // square loop
@@ -241,21 +275,26 @@ fn solve(mut board: Board, pieces: Vec<PieceShape>) {
             let current_piece_index = stack.latest_index_of(Piece).unwrap();
             if current_square_index < remaining_pieces[current_piece_index].squares.len() - 1 {
                 stack.set_latest_index_of(Square, current_square_index + 1);
+                stack.set_reset_target_stack_index(stack.latest_stack_index_of(Square).unwrap());
                 continue;
             }
             // reversed loop
             let current_reversed_index = stack.latest_index_of(Reversed).unwrap();
             if current_reversed_index < 2 - 1 {
                 stack.set_latest_index_of(Reversed, current_reversed_index + 1);
+                stack.set_reset_target_stack_index(stack.latest_stack_index_of(Reversed).unwrap());
                 continue;
             }
             // piece loop
             if current_piece_index < remaining_pieces.len() - 1 {
                 stack.set_latest_index_of(Piece, current_piece_index + 1);
+                stack.set_reset_target_stack_index(stack.latest_stack_index_of(Piece).unwrap());
                 continue;
             }
         }
     }
+    board.print_every_pieces();
+
     println!("\nremaining_pieces:");
     for piece in remaining_pieces.iter() {
         println!("{}", piece.print(None));
