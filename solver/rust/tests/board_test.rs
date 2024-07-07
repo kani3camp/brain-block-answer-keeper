@@ -75,17 +75,21 @@ mod board_test {
 
     #[test]
     fn test_is_filled() {
-        let board_shape = BoardShape::new(5, 5);
+        let board_shape = BoardShape::new(2, 4);
         let mut board = Board::new(board_shape, vec![]);
         let piece_shape = PieceShape {
-            squares: vec![(1, 2), (2, 2), (3, 2), (4, 2), (4, 1)],
+            //    H
+            //  HHH
+            squares: vec![(2, 2), (3, 2), (4, 2), (4, 1)],
         };
         board.push_piece(piece_shape).unwrap();
-        assert!(board.is_filled());
+        assert_eq!(board.is_filled(), false);
         let piece_shape = PieceShape {
-            squares: vec![(1, 2), (2, 2), (3, 2), (3, 1), (4, 1)],
+            // HHH
+            // H
+            squares: vec![(1, 1), (2, 1), (3, 1), (1, 2)],
         };
         board.push_piece(piece_shape).unwrap();
-        assert!(!board.is_filled());
+        assert_eq!(board.is_filled(), true);
     }
 }

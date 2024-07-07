@@ -3,6 +3,7 @@
 */
 
 use crate::piece::{Int, PieceShape, SquarePosition};
+use std::collections::HashSet;
 
 pub struct BoardShape {
     pub height: Int,
@@ -59,14 +60,14 @@ impl Board {
         Ok(())
     }
 
-    fn filled_squares(&self) -> Vec<SquarePosition> {
-        let mut square_list: Vec<SquarePosition> = Vec::new();
+    fn filled_squares(&self) -> HashSet<SquarePosition> {
+        let mut squares: HashSet<SquarePosition> = HashSet::new();
         for piece in self.pieces.iter() {
             for square in piece.squares.iter() {
-                square_list.push((square.0, square.1));
+                squares.insert((square.0, square.1));
             }
         }
-        square_list
+        squares
     }
 
     pub fn is_applicable_piece(&self, piece: &PieceShape) -> bool {
@@ -94,7 +95,7 @@ impl Board {
     }
 
     pub fn is_valid(&self) -> bool {
-        let filled_area = self.filled_squares();
+        let filled_area: Vec<SquarePosition> = self.filled_squares().iter().cloned().collect();
 
         // filled_areaがボード内に収まっているか
         for square in filled_area.iter() {
