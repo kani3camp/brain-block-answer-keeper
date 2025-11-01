@@ -94,7 +94,7 @@ fn main() {
 fn solve(mut board: Board, pieces: Vec<PieceShape>) {
     println!("starting calculation...");
     let start_at = std::time::Instant::now();
-    let show_log = false;
+    let show_log = true;
 
     let mut remaining_pieces: Vec<PieceShape> = pieces.clone();
 
@@ -123,7 +123,7 @@ fn solve(mut board: Board, pieces: Vec<PieceShape>) {
         }
         if board.is_position_filled(&anchor) {
             if show_log {
-                println!("埋まっているのでスキップ");
+                println!("アンカー位置がすでに埋まっているのでスキップ");
             }
             anchor_i += 1;
             continue;
@@ -131,7 +131,7 @@ fn solve(mut board: Board, pieces: Vec<PieceShape>) {
         if stack.target_stack_index().is_none() {
             stack.push(Anchor, anchor_i);
         }
-        // PIECE
+        // PIECE: 残っているピースについて走査
         let mut remove_piece_i: Option<usize> = None;
         'PIECE: for (piece_shape_i, piece_shape) in remaining_pieces.iter().enumerate() {
             if stack.target_stack_index().is_some() {
@@ -152,7 +152,7 @@ fn solve(mut board: Board, pieces: Vec<PieceShape>) {
                     stack.push(Piece, piece_shape_i);
                 }
             }
-            // REVERSED
+            // REVERSED: ピースの裏表それぞれについて走査
             for (reversed_i, reversed) in [false, true].iter().enumerate() {
                 if stack.target_stack_index().is_some() {
                     if stack.target_stack_index() == stack.latest_stack_index_of(Reversed) {
@@ -177,7 +177,7 @@ fn solve(mut board: Board, pieces: Vec<PieceShape>) {
                 if *reversed {
                     piece = piece.reversed();
                 }
-                // SQUARE
+                // SQUARE: ピースの全マスについて走査
                 for (square_i, square) in piece.squares.iter().enumerate() {
                     if stack.target_stack_index().is_some() {
                         if stack.target_stack_index() == stack.latest_stack_index_of(Square) {
@@ -197,7 +197,7 @@ fn solve(mut board: Board, pieces: Vec<PieceShape>) {
                             stack.push(Square, square_i);
                         }
                     }
-                    // ROTATE90
+                    // ROTATE90: ピースを90度ずつ回転して走査
                     for num90 in 0..4 {
                         if stack.target_stack_index().is_some() {
                             if stack.target_stack_index() == stack.latest_stack_index_of(Rotate90) {

@@ -29,7 +29,7 @@ impl Board {
     pub fn print_every_pieces(&self) {
         for (i, piece) in self.pieces.iter().enumerate() {
             println!(
-                "{}つ目: {}\n{}",
+                "{}個目: {}\n{}",
                 i + 1,
                 piece.print_left_bottom_position(),
                 piece.print(None)
@@ -94,8 +94,9 @@ impl Board {
         filled_area.contains(position)
     }
 
+    /// TODO: ピースがボード外にはみ出してないかチェックする。
     pub fn is_valid(&self) -> bool {
-        let filled_area: Vec<SquarePosition> = self.filled_squares().iter().cloned().collect();
+        let filled_area: HashSet<SquarePosition> = self.filled_squares();
 
         // filled_areaがボード内に収まっているか
         for square in filled_area.iter() {
@@ -108,18 +109,10 @@ impl Board {
             }
         }
 
-        // ピース同士が重なっていないか
-        for i in 0..filled_area.len() {
-            for j in i + 1..filled_area.len() {
-                if filled_area[i] == filled_area[j] {
-                    return false;
-                }
-            }
-        }
-
         true
     }
 
+    /// アンカー位置（x,y方向に走査）を順番に並べたVecを返す。
     pub fn get_anchor_positions(&self) -> Vec<SquarePosition> {
         let mut anchor_positions: Vec<SquarePosition> = Vec::new();
         for y in 1..=self.shape.height {

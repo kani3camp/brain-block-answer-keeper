@@ -1,5 +1,7 @@
 use crate::stack::LoopType::{Anchor, Piece, Reversed, Rotate90, Square};
 
+/// TODO: スタックの使い方について説明
+
 #[derive(Default)]
 pub struct SolveStack {
     items: Vec<StackItem>,
@@ -108,6 +110,7 @@ impl SolveStack {
         self.reset_target_index = None;
     }
 
+    /// TODO: 何これ？
     pub fn target_stack_index(&self) -> Option<usize> {
         self.reset_target_index
     }
